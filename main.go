@@ -65,7 +65,7 @@ type adMarkup struct {
 }
 
 type native struct {
-	Assets        []asset        `json:"asset"`
+	Assets        []asset        `json:"assets"`
 	EventTrackers []eventTracker `json:"eventtrackers"`
 	Ver           string         `json:"ver"`
 }
