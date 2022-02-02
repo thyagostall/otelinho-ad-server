@@ -86,8 +86,8 @@ type eventTracker struct {
 
 func main() {
 	s := storage.Make()
-	s.CreateCampaign("t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952")
-	s.CreateCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305")
+	s.CreateCampaign("t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
+	s.CreateCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
