@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -93,6 +94,15 @@ func main() {
 		}
 
 		c.JSON(http.StatusOK, createBidResponse())
+	})
+	r.GET("/event/:event-id/:event-type", func(c *gin.Context) {
+		eventID := c.Param("event-id")
+		eventType := c.Param("event-type")
+
+		fmt.Printf("event-id: %s, event-type: %s\n", eventID, eventType)
+
+		pixel := []byte("\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3B")
+		c.Data(http.StatusOK, "image/gif", pixel)
 	})
 	r.Run("localhost:3001")
 }
