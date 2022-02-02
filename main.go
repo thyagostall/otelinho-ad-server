@@ -84,6 +84,9 @@ type eventTracker struct {
 }
 
 func main() {
+	s := makeStorage()
+	s.createCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305")
+
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
 		var bid bidRequest
@@ -93,7 +96,8 @@ func main() {
 			return
 		}
 
-		c.JSON(http.StatusOK, createBidResponse())
+		res := s.retrieveCampaign()
+		c.JSON(http.StatusOK, createBidResponse(*res))
 	})
 	r.GET("/event/:event-id/:event-type", func(c *gin.Context) {
 		eventID := c.Param("event-id")
@@ -107,7 +111,7 @@ func main() {
 	r.Run("localhost:3001")
 }
 
-func createBidResponse() bidResponse {
+func createBidResponse(c campaign) bidResponse {
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{
@@ -119,7 +123,7 @@ func createBidResponse() bidResponse {
 						Price:        7,
 						CampaignID:   "1",
 						ID:           "3c8e88f7-9be3-46c3-8c83-26a69fd68e6d",
-						AdMarkup:     createAdMarkup(),
+						AdMarkup:     createAdMarkup(c.Creative),
 						LossURL:      "https://localhost:3333/lossurl",
 						ADomain: []string{
 							"",
@@ -138,7 +142,7 @@ func createBidResponse() bidResponse {
 	}
 }
 
-func createAdMarkup() string {
+func createAdMarkup(c string) string {
 	adm := adMarkup{
 		Native: native{
 			Assets: []asset{
@@ -146,7 +150,7 @@ func createAdMarkup() string {
 					ID: 1,
 					Data: map[string]interface{}{
 						"type":  501,
-						"value": "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305",
+						"value": c,
 					},
 					Required: 1,
 				},
@@ -168,4 +172,28 @@ func createAdMarkup() string {
 	}
 	marshalledAdm, _ := json.Marshal(adm)
 	return string(marshalledAdm)
+}
+
+// storage
+type storage struct {
+	Campagins []campaign
+}
+
+type campaign struct {
+	Creative string
+}
+
+func (s *storage) createCampaign(creative string) {
+	c := campaign{Creative: creative}
+	s.Campagins = append(s.Campagins, c)
+}
+
+func (s *storage) retrieveCampaign() *campaign {
+	return &s.Campagins[0]
+}
+
+func makeStorage() *storage {
+	return &storage{
+		Campagins: []campaign{},
+	}
 }
