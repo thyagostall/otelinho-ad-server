@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"thyago.com/hello-world-golang-gin/storage"
 )
 
 // bid request
@@ -84,8 +85,9 @@ type eventTracker struct {
 }
 
 func main() {
-	s := makeStorage()
-	s.createCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305")
+	s := storage.Make()
+	s.CreateCampaign("t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952")
+	s.CreateCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305")
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
@@ -96,7 +98,7 @@ func main() {
 			return
 		}
 
-		res := s.retrieveCampaign()
+		res := s.RetrieveCampaign()
 		c.JSON(http.StatusOK, createBidResponse(*res))
 	})
 	r.GET("/event/:event-id/:event-type", func(c *gin.Context) {
@@ -111,7 +113,7 @@ func main() {
 	r.Run("localhost:3001")
 }
 
-func createBidResponse(c campaign) bidResponse {
+func createBidResponse(c storage.Campaign) bidResponse {
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{
@@ -172,28 +174,4 @@ func createAdMarkup(c string) string {
 	}
 	marshalledAdm, _ := json.Marshal(adm)
 	return string(marshalledAdm)
-}
-
-// storage
-type storage struct {
-	Campagins []campaign
-}
-
-type campaign struct {
-	Creative string
-}
-
-func (s *storage) createCampaign(creative string) {
-	c := campaign{Creative: creative}
-	s.Campagins = append(s.Campagins, c)
-}
-
-func (s *storage) retrieveCampaign() *campaign {
-	return &s.Campagins[0]
-}
-
-func makeStorage() *storage {
-	return &storage{
-		Campagins: []campaign{},
-	}
 }
