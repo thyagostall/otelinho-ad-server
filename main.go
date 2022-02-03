@@ -1,11 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"thyago.com/hello-world-golang-gin/storage"
 )
 
@@ -85,9 +87,11 @@ type eventTracker struct {
 }
 
 func main() {
-	s := storage.Make()
-	s.CreateCampaign("t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
-	s.CreateCampaign("t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
+	db, _ := sql.Open("sqlite3", "./campaigns.db")
+	defer db.Close()
+
+	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
+	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
@@ -98,8 +102,12 @@ func main() {
 			return
 		}
 
-		res := s.RetrieveCampaign()
-		c.JSON(http.StatusOK, createBidResponse(*res))
+		res := storage.RetrieveCampaign(db)
+		if res != nil {
+			c.JSON(http.StatusOK, createBidResponse(*res))
+		} else {
+			c.Status(http.StatusNoContent)
+		}
 	})
 	r.GET("/event/:event-id/:event-type", func(c *gin.Context) {
 		eventID := c.Param("event-id")

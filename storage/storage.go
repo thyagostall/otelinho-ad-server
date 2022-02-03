@@ -1,51 +1,36 @@
 package storage
 
 import (
-	"fmt"
+	"database/sql"
 	"time"
 )
 
-type Storage struct {
-	Campaigns []Campaign
-}
-
 type Campaign struct {
+	ID        int
 	Creative  string
 	StartDate time.Time
 	EndDate   time.Time
 }
 
-func (s *Storage) CreateCampaign(creative string, strStartDate string, strEndDate string) {
-	startDate, _ := time.Parse(time.RFC3339, strStartDate)
-	endDate, _ := time.Parse(time.RFC3339, strEndDate)
-	c := Campaign{Creative: creative, StartDate: startDate, EndDate: endDate}
-	s.Campaigns = append(s.Campaigns, c)
+func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate string) {
+	stmt, _ := db.Prepare("INSERT INTO campaigns (creative, start_date, end_date) VALUES (?, ?, ?)")
+	_, _ = stmt.Exec(creative, strStartDate, strEndDate)
 }
 
-func (s *Storage) RetrieveCampaign() *Campaign {
-	now := time.Now()
-	candidates := []Campaign{}
-	fmt.Println(now)
-	for i := 0; i < len(s.Campaigns); i++ {
-		fmt.Println(s.Campaigns[i])
+func RetrieveCampaign(db *sql.DB) *Campaign {
+	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date FROM campaigns WHERE start_date <= ? AND end_date >= ?")
+	rows, _ := stmt.Query(time.Now(), time.Now())
+	defer rows.Close()
 
-		if !now.After(s.Campaigns[i].StartDate) {
-			continue
-		}
+	var id int
+	var creative string
+	var startDate time.Time
+	var endDate time.Time
 
-		if !now.Before(s.Campaigns[i].EndDate) {
-			continue
-		}
-
-		candidates = append(candidates, s.Campaigns[i])
+	for rows.Next() {
+		rows.Scan(&id, &creative, &startDate, &endDate)
+		return &Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate}
 	}
 
-	index := time.Now().Unix() % int64(len(candidates))
-	return &candidates[index]
-}
-
-func Make() *Storage {
-	return &Storage{
-		Campaigns: []Campaign{},
-	}
+	return nil
 }
