@@ -8,6 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	"thyago.com/hello-world-golang-gin/beacon"
+	"thyago.com/hello-world-golang-gin/campaign"
 	"thyago.com/hello-world-golang-gin/storage"
 )
 
@@ -54,7 +56,8 @@ type bidItem struct {
 	CampaignID   string   `json:"cid"`
 	ID           string   `json:"id"`
 	AdMarkup     string   `json:"adm"`
-	LossURL      string   `json:"nurl"`
+	WinURL       string   `json:"nurl"`
+	LossURL      string   `json:"lurl"`
 	ADomain      []string `json:"adomain"`
 	Cat          []string `json:"cat"`
 	CrID         string   `json:"crid"`
@@ -109,11 +112,14 @@ func main() {
 			c.Status(http.StatusNoContent)
 		}
 	})
-	r.GET("/event/:event-id/:event-type", func(c *gin.Context) {
-		eventID := c.Param("event-id")
+	r.GET("/event/:event-type/:event-metadata", func(c *gin.Context) {
 		eventType := c.Param("event-type")
+		eventMetadata := c.Param("event-metadata")
 
-		fmt.Printf("event-id: %s, event-type: %s\n", eventID, eventType)
+		err := beacon.RecordBeaconReceived(db, eventMetadata, eventType)
+		if err != nil {
+			fmt.Println(err)
+		}
 
 		pixel := []byte("\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3B")
 		c.Data(http.StatusOK, "image/gif", pixel)
@@ -121,7 +127,7 @@ func main() {
 	r.Run("localhost:3001")
 }
 
-func createBidResponse(c storage.Campaign) bidResponse {
+func createBidResponse(c campaign.Campaign) bidResponse {
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{
@@ -133,8 +139,9 @@ func createBidResponse(c storage.Campaign) bidResponse {
 						Price:        7,
 						CampaignID:   "1",
 						ID:           "3c8e88f7-9be3-46c3-8c83-26a69fd68e6d",
-						AdMarkup:     createAdMarkup(c.Creative),
-						LossURL:      "https://localhost:3333/lossurl",
+						AdMarkup:     createAdMarkup(c),
+						WinURL:       beacon.GenerateBeacon(c, "win"),
+						LossURL:      beacon.GenerateBeacon(c, "loss"),
 						ADomain: []string{
 							"",
 						},
@@ -152,7 +159,7 @@ func createBidResponse(c storage.Campaign) bidResponse {
 	}
 }
 
-func createAdMarkup(c string) string {
+func createAdMarkup(c campaign.Campaign) string {
 	adm := adMarkup{
 		Native: native{
 			Assets: []asset{
@@ -160,7 +167,7 @@ func createAdMarkup(c string) string {
 					ID: 1,
 					Data: map[string]interface{}{
 						"type":  501,
-						"value": c,
+						"value": c.Creative,
 					},
 					Required: 1,
 				},
@@ -168,12 +175,12 @@ func createAdMarkup(c string) string {
 			EventTrackers: []eventTracker{
 				{
 					Method: 1,
-					URL:    "https://localhost:3333/event1",
+					URL:    beacon.GenerateBeacon(c, "impression"),
 					Event:  1,
 				},
 				{
 					Method: 1,
-					URL:    "https://localhost:3333/universalevent",
+					URL:    beacon.GenerateBeacon(c, "${EVENT_TYPE}"),
 					Event:  600,
 				},
 			},
