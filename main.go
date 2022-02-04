@@ -8,9 +8,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
-	"thyago.com/hello-world-golang-gin/beacon"
-	"thyago.com/hello-world-golang-gin/campaign"
-	"thyago.com/hello-world-golang-gin/storage"
+	"thyago.com/otelinho/beacon"
+	"thyago.com/otelinho/campaign"
+	"thyago.com/otelinho/pacing"
+	"thyago.com/otelinho/storage"
 )
 
 // bid request
@@ -105,9 +106,9 @@ func main() {
 			return
 		}
 
-		res := storage.RetrieveCampaign(db)
-		if res != nil {
-			c.JSON(http.StatusOK, createBidResponse(*res))
+		campaign := storage.RetrieveCampaign(db)
+		if campaign != nil && pacing.ShouldServe(db, *campaign) {
+			c.JSON(http.StatusOK, createBidResponse(*campaign))
 		} else {
 			c.Status(http.StatusNoContent)
 		}

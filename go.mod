@@ -1,4 +1,4 @@
-module thyago.com/hello-world-golang-gin
+module thyago.com/otelinho
 
 go 1.16
 
@@ -10,4 +10,5 @@ require (
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	github.com/mattn/go-sqlite3 v1.14.11 // indirect
 	github.com/urfave/cli v1.22.5 // indirect
+	go.einride.tech/pid v0.1.0 // indirect
 )

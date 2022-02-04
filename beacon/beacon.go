@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io"
 
-	"thyago.com/hello-world-golang-gin/campaign"
+	"thyago.com/otelinho/campaign"
 )
 
 type beacon struct {

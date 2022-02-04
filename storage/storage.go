@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"time"
 
-	"thyago.com/hello-world-golang-gin/campaign"
+	"thyago.com/otelinho/campaign"
 )
 
 func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate string) {
