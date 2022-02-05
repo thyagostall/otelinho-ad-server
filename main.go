@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/campaign"
 	"thyago.com/otelinho/pacing"
@@ -91,7 +91,7 @@ type eventTracker struct {
 }
 
 func main() {
-	db, _ := sql.Open("sqlite3", "./campaigns.db")
+	db, _ := sql.Open("postgres", "host=localhost port=5432 user=otelinho password=devpassword dbname=otelinho sslmode=disable")
 	defer db.Close()
 
 	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")

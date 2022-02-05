@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  database:
+    image: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - .database/otelinho:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: devpassword
+      POSTGRES_USER: otelinho
+      POSTGRES_DB: otelinho

@@ -18,7 +18,7 @@ type beacon struct {
 }
 
 var secretKey = []byte("thesecretkey1234thesecretkey1234")
-var host = "a70d-168-194-162-203.ngrok.io"
+var host = "9515-177-220-174-231.ngrok.io"
 
 func GenerateBeacon(campaign campaign.Campaign, event string) string {
 	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID})
@@ -37,7 +37,7 @@ func RecordBeaconReceived(db *sql.DB, metadata string, event string) error {
 	var b beacon
 	json.Unmarshal(decrypted, &b)
 
-	stmt, err := db.Prepare("INSERT INTO beacons (campaign_id, event) VALUES (?, ?)")
+	stmt, err := db.Prepare("INSERT INTO beacons (campaign_id, event) VALUES ($1, $2)")
 	if err != nil {
 		return err
 	}

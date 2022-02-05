@@ -7,8 +7,7 @@ require (
 	github.com/codegangsta/envy v0.0.0-20141216192214-4b78388c8ce4 // indirect
 	github.com/codegangsta/gin v0.0.0-20211113050330-71f90109db02 // indirect
 	github.com/gin-gonic/gin v1.7.7 // indirect
-	github.com/mattn/go-shellwords v1.0.12 // indirect
-	github.com/mattn/go-sqlite3 v1.14.11 // indirect
+	github.com/lib/pq v1.10.4 // indirect
 	github.com/urfave/cli v1.22.5 // indirect
 	go.einride.tech/pid v0.1.0 // indirect
 )

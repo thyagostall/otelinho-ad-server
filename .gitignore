@@ -2,3 +2,5 @@
 *.db
 
 gin-bin
+
+.database

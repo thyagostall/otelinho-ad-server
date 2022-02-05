@@ -8,7 +8,7 @@ import (
 )
 
 func ShouldServe(db *sql.DB, campaign campaign.Campaign) bool {
-	stmt, _ := db.Prepare("SELECT velocity FROM pacing WHERE campaign_id = ?")
+	stmt, _ := db.Prepare("SELECT velocity FROM pacing WHERE campaign_id = $1")
 	rows, _ := stmt.Query(campaign.ID)
 	if rows.Next() {
 		var velocity uint32

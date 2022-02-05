@@ -2,20 +2,23 @@ package storage
 
 import (
 	"database/sql"
+	"fmt"
 	"time"
 
 	"thyago.com/otelinho/campaign"
 )
 
 func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate string) {
-	stmt, _ := db.Prepare("INSERT INTO campaigns (creative, start_date, end_date) VALUES (?, ?, ?)")
+	stmt, _ := db.Prepare("INSERT INTO campaigns (creative, start_date, end_date) VALUES ($1, $2, $3)")
 	_, _ = stmt.Exec(creative, strStartDate, strEndDate)
 }
 
 func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 	now := time.Now()
-	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date FROM campaigns WHERE start_date <= ? AND end_date >= ?")
-	rows, _ := stmt.Query(now, now)
+	stmt, err := db.Prepare("SELECT id, creative, start_date, end_date FROM campaigns WHERE start_date <= $1 AND end_date >= $2")
+	fmt.Println(err)
+	rows, err := stmt.Query(now, now)
+	fmt.Println(err)
 	defer rows.Close()
 
 	var id int
