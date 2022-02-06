@@ -2,7 +2,6 @@ package pacing
 
 import (
 	"database/sql"
-	"fmt"
 	"math/rand"
 
 	"thyago.com/otelinho/campaign"
@@ -15,8 +14,6 @@ func ShouldServe(db *sql.DB, campaign campaign.Campaign) bool {
 		var velocity uint32
 		rows.Scan(&velocity)
 		randValue := rand.Uint32()
-
-		fmt.Printf("%d %d\n", velocity, randValue)
 
 		return randValue < velocity
 	}

@@ -33,3 +33,16 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 
 	return nil
 }
+
+func TickAdRequest(db *sql.DB) error {
+	stmt, err := db.Prepare("INSERT INTO ad_requests DEFAULT VALUES;")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
