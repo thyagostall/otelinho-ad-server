@@ -135,6 +135,8 @@ func main() {
 		campaignID, _ := strconv.Atoi(c.Param("campaign-id"))
 
 		db := createDB()
+		defer db.Close()
+
 		campaign := storage.RetrieveCampaignByID(db, campaignID)
 		res, err := pacing.AdjustVelocity(db, campaign)
 		if err != nil {

@@ -18,7 +18,7 @@ type beacon struct {
 }
 
 var secretKey = []byte("thesecretkey1234thesecretkey1234")
-var host = "9515-177-220-174-231.ngrok.io"
+var host = "6ab9-177-220-174-231.ngrok.io"
 
 func GenerateBeacon(campaign campaign.Campaign, event string) string {
 	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID})
