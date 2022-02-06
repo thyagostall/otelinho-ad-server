@@ -18,7 +18,8 @@ create table if not exists beacons
 	campaign_id integer not null
 		constraint beacons_campaigns_fk
 			references campaigns,
-	event varchar(100) not null
+	event varchar(100) not null,
+	timestamp timestamp default now() not null
 );
 
 alter table beacons owner to otelinho;
@@ -37,3 +38,13 @@ alter table pacing owner to otelinho;
 
 create unique index if not exists pacing_campaign_id_uindex
 	on pacing (campaign_id);
+
+create table if not exists ad_requests
+(
+	id serial not null
+		constraint ad_requests_pk
+			primary key,
+	timestamp timestamp default now() not null
+);
+
+alter table ad_requests owner to otelinho;
