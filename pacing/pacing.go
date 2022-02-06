@@ -47,7 +47,7 @@ func AdjustVelocity(db *sql.DB, campaign *campaign.Campaign) (map[string]interfa
 		return nil, err
 	}
 
-	remaining := campaign.EndDate.Sub(time.Now())
+	remaining := time.Until(campaign.EndDate)
 	ratio := float64(campaign.Goal-currentCount) / remaining.Minutes() / inventory
 	newVelocity := uint32(ratio * float64(^uint32(0)))
 
@@ -57,6 +57,12 @@ func AdjustVelocity(db *sql.DB, campaign *campaign.Campaign) (map[string]interfa
 	res["impressions"] = currentCount
 	res["goal"] = campaign.Goal
 	res["new_velocity"] = newVelocity
+
+	stmt, err = db.Prepare("UPDATE pacing SET velocity = $1 WHERE campaign_id = $2")
+	if err != nil {
+		return nil, err
+	}
+	stmt.Exec(newVelocity, campaign.ID)
 
 	return res, nil
 }
