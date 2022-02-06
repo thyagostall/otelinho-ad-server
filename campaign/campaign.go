@@ -7,4 +7,5 @@ type Campaign struct {
 	Creative  string
 	StartDate time.Time
 	EndDate   time.Time
+	Goal      uint
 }

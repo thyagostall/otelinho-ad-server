@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -91,9 +93,6 @@ type eventTracker struct {
 }
 
 func main() {
-	db, _ := sql.Open("postgres", "host=localhost port=5432 user=otelinho password=devpassword dbname=otelinho sslmode=disable")
-	defer db.Close()
-
 	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
 	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
 
@@ -105,6 +104,9 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
+
+		db := createDB()
+		defer db.Close()
 
 		storage.TickAdRequest(db)
 		campaign := storage.RetrieveCampaign(db)
@@ -118,6 +120,9 @@ func main() {
 		eventType := c.Param("event-type")
 		eventMetadata := c.Param("event-metadata")
 
+		db := createDB()
+		defer db.Close()
+
 		err := beacon.RecordBeaconReceived(db, eventMetadata, eventType)
 		if err != nil {
 			fmt.Println(err)
@@ -126,7 +131,28 @@ func main() {
 		pixel := []byte("\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3B")
 		c.Data(http.StatusOK, "image/gif", pixel)
 	})
+	r.GET("/velocity/:campaign-id", func(c *gin.Context) {
+		campaignID, _ := strconv.Atoi(c.Param("campaign-id"))
+
+		db := createDB()
+		campaign := storage.RetrieveCampaignByID(db, campaignID)
+		res, err := pacing.AdjustVelocity(db, campaign)
+		if err != nil {
+			c.String(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+		} else {
+			c.JSON(http.StatusOK, res)
+		}
+	})
 	r.Run("localhost:3001")
+}
+
+func createDB() *sql.DB {
+	db, _ := sql.Open("postgres", "host=localhost port=5432 user=otelinho password=devpassword dbname=otelinho sslmode=disable")
+	db.SetMaxIdleConns(10)
+	db.SetMaxOpenConns(20)
+	db.SetConnMaxIdleTime(1 * time.Second)
+	db.SetConnMaxLifetime(30 * time.Second)
+	return db
 }
 
 func createBidResponse(c campaign.Campaign) bidResponse {

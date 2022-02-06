@@ -3,7 +3,7 @@ BODY=`curl --silent -X POST "https://9515-177-220-174-231.ngrok.io/openrtb" --he
 if [ ! -z $BODY ]
 then
     IMPRESSION_BEACON=`echo $BODY | jq -r '.seatbid[0].bid[0].adm | fromjson | .native.eventtrackers[0].url'`
-    curl --silent $IMPRESSION_BEACON
+    curl --silent $IMPRESSION_BEACON &
     echo "Beacon fired"
 else
     echo "Empty response"
