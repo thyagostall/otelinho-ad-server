@@ -5,7 +5,10 @@ create table if not exists campaigns
 			primary key,
 	creative varchar(100) not null,
 	start_date timestamp not null,
-	end_date timestamp not null
+	end_date timestamp not null,
+	goal integer not null,
+	max_bid numeric not null,
+	budget numeric
 );
 
 alter table campaigns owner to otelinho;
