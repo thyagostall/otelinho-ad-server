@@ -13,8 +13,17 @@ func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate
 }
 
 func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
+	query := `
+		SELECT id, creative, start_date, end_date, goal, max_bid
+		FROM campaigns
+		JOIN pacing ON campaigns.id = pacing.campaign_id
+		WHERE start_date <= $1 AND end_date >= $2
+		AND floor(random() * (2^32-1))::bigint < velocity
+		ORDER BY max_bid DESC
+	`
+
 	now := time.Now()
-	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, max_bid FROM campaigns WHERE start_date <= $1 AND end_date >= $2 ORDER BY max_bid DESC")
+	stmt, _ := db.Prepare(query)
 	rows, _ := stmt.Query(now, now)
 	defer rows.Close()
 

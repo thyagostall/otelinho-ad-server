@@ -110,7 +110,7 @@ func main() {
 
 		storage.TickAdRequest(db)
 		campaign := storage.RetrieveCampaign(db)
-		if campaign != nil && pacing.ShouldServe(db, *campaign) {
+		if campaign != nil {
 			c.JSON(http.StatusOK, createBidResponse(*campaign))
 		} else {
 			c.Status(http.StatusNoContent)
