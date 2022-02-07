@@ -8,4 +8,5 @@ type Campaign struct {
 	StartDate time.Time
 	EndDate   time.Time
 	Goal      uint
+	MaxBid    float64
 }

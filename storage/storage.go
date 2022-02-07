@@ -14,7 +14,7 @@ func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate
 
 func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 	now := time.Now()
-	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal FROM campaigns WHERE start_date <= $1 AND end_date >= $2")
+	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, max_bid FROM campaigns WHERE start_date <= $1 AND end_date >= $2 ORDER BY max_bid DESC")
 	rows, _ := stmt.Query(now, now)
 	defer rows.Close()
 
@@ -23,10 +23,22 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 	var startDate time.Time
 	var endDate time.Time
 	var goal uint
+	var maxBid float64
 
-	for rows.Next() {
-		rows.Scan(&id, &creative, &startDate, &endDate, &goal)
-		return &campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal}
+	if rows.Next() {
+		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
+		firstCampaign := campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
+
+		if rows.Next() {
+			rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
+			secondCampaign := campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
+
+			firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
+		} else {
+			firstCampaign.MaxBid = 0.01
+		}
+
+		return &firstCampaign
 	}
 
 	return nil

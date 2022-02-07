@@ -55,7 +55,7 @@ type seatBid struct {
 
 type bidItem struct {
 	DemandSource string   `json:"demand_source"`
-	Price        float32  `json:"price"`
+	Price        float64  `json:"price"`
 	CampaignID   string   `json:"cid"`
 	ID           string   `json:"id"`
 	AdMarkup     string   `json:"adm"`
@@ -166,8 +166,8 @@ func createBidResponse(c campaign.Campaign) bidResponse {
 				Bid: []bidItem{
 					{
 						DemandSource: "direct",
-						Price:        7,
-						CampaignID:   "1",
+						Price:        c.MaxBid,
+						CampaignID:   strconv.Itoa(c.ID),
 						ID:           "3c8e88f7-9be3-46c3-8c83-26a69fd68e6d",
 						AdMarkup:     createAdMarkup(c),
 						WinURL:       beacon.GenerateBeacon(c, "win"),
