@@ -14,14 +14,15 @@ import (
 )
 
 type beacon struct {
-	CampaignID int `json:"campaign_id"`
+	CampaignID   int    `json:"campaign_id"`
+	ImpressionID string `json:"impression_id"`
 }
 
 var secretKey = []byte("thesecretkey1234thesecretkey1234")
 var host = "6ab9-177-220-174-231.ngrok.io"
 
-func GenerateBeacon(campaign campaign.Campaign, event string) string {
-	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID})
+func GenerateBeacon(campaign campaign.Campaign, impressionID string, event string) string {
+	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID, ImpressionID: impressionID})
 	encrypted := encrypt(secretKey, beacon)
 	encoded := base64.URLEncoding.EncodeToString(encrypted)
 	return fmt.Sprintf("https://%s/event/%s/%s", host, event, encoded)

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/campaign"
@@ -158,6 +159,7 @@ func createDB() *sql.DB {
 }
 
 func createBidResponse(c campaign.Campaign) bidResponse {
+	impressionID := uuid.New().String()
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{
@@ -169,9 +171,9 @@ func createBidResponse(c campaign.Campaign) bidResponse {
 						Price:        c.MaxBid,
 						CampaignID:   strconv.Itoa(c.ID),
 						ID:           "3c8e88f7-9be3-46c3-8c83-26a69fd68e6d",
-						AdMarkup:     createAdMarkup(c),
-						WinURL:       beacon.GenerateBeacon(c, "win"),
-						LossURL:      beacon.GenerateBeacon(c, "loss"),
+						AdMarkup:     createAdMarkup(c, impressionID),
+						WinURL:       beacon.GenerateBeacon(c, impressionID, "win"),
+						LossURL:      beacon.GenerateBeacon(c, impressionID, "loss"),
 						ADomain: []string{
 							"",
 						},
@@ -179,7 +181,7 @@ func createBidResponse(c campaign.Campaign) bidResponse {
 							"IAB12-3",
 						},
 						CrID:         "1",
-						ImpressionID: "25eed2e8-6520-47cb-a22c-15ef9b6af4c1",
+						ImpressionID: impressionID,
 						AdID:         "1",
 						AdmMediaType: "native",
 					},
@@ -189,7 +191,7 @@ func createBidResponse(c campaign.Campaign) bidResponse {
 	}
 }
 
-func createAdMarkup(c campaign.Campaign) string {
+func createAdMarkup(c campaign.Campaign, impressionID string) string {
 	adm := adMarkup{
 		Native: native{
 			Assets: []asset{
@@ -205,12 +207,12 @@ func createAdMarkup(c campaign.Campaign) string {
 			EventTrackers: []eventTracker{
 				{
 					Method: 1,
-					URL:    beacon.GenerateBeacon(c, "impression"),
+					URL:    beacon.GenerateBeacon(c, impressionID, "impression"),
 					Event:  1,
 				},
 				{
 					Method: 1,
-					URL:    beacon.GenerateBeacon(c, "${EVENT_TYPE}"),
+					URL:    beacon.GenerateBeacon(c, impressionID, "${EVENT_TYPE}"),
 					Event:  600,
 				},
 			},

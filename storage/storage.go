@@ -41,7 +41,6 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 		if rows.Next() {
 			rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
 			secondCampaign := campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
-
 			firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
 		} else {
 			firstCampaign.MaxBid = 0.01
