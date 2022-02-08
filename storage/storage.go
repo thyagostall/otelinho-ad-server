@@ -34,7 +34,7 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 		JOIN pacing ON campaigns.id = pacing.campaign_id
 		WHERE start_date <= $1 AND end_date >= $2
 		AND floor(random() * (2^32-1))::bigint < velocity
-		AND remaining_budget >= max_bid
+		AND remaining_budget >= (0.01 / 1000)
 		ORDER BY max_bid DESC
 	`
 
