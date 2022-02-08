@@ -27,20 +27,28 @@ func CreateBudgetReversalControlRecord(db *sql.DB, impressionID string, maxBid f
 	return nil
 }
 
-func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
+func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
 	query := `
 		SELECT id, creative, start_date, end_date, goal, max_bid
 		FROM campaigns
 		JOIN pacing ON campaigns.id = pacing.campaign_id
-		WHERE start_date <= $1 AND end_date >= $2
+		WHERE start_date <= $1 AND end_date >= $1
 		AND floor(random() * (2^32-1))::bigint < velocity
-		AND remaining_budget >= (0.01 / 1000)
+		AND remaining_budget >= ($2 / 1000.00)
 		ORDER BY max_bid DESC
 	`
 
 	now := time.Now()
-	stmt, _ := db.Prepare(query)
-	rows, _ := stmt.Query(now, now)
+	floorPrice := 0.01
+
+	stmt, err := db.Prepare(query)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := stmt.Query(now, floorPrice)
+	if err != nil {
+		return nil, err
+	}
 	defer rows.Close()
 
 	var id int
@@ -61,18 +69,27 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 			secondCampaign = campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
 			firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
 		} else {
-			firstCampaign.MaxBid = 0.01
+			firstCampaign.MaxBid = floorPrice
 		}
 
-		stmt, _ = db.Prepare("UPDATE campaigns SET remaining_budget = remaining_budget - $1 WHERE id = $2 AND remaining_budget - $1 >= 0")
-		res, _ := stmt.Exec(firstCampaign.MaxBid/1000, firstCampaign.ID)
-		rowsAffected, _ := res.RowsAffected()
+		stmt, err = db.Prepare("UPDATE campaigns SET remaining_budget = remaining_budget - $1 WHERE id = $2 AND remaining_budget - $1 >= 0")
+		if err != nil {
+			return nil, err
+		}
+		res, err := stmt.Exec(firstCampaign.MaxBid/1000, firstCampaign.ID)
+		if err != nil {
+			return nil, err
+		}
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			return nil, err
+		}
 		if rowsAffected > 0 {
-			return &firstCampaign
+			return &firstCampaign, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {

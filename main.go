@@ -110,7 +110,11 @@ func main() {
 		defer db.Close()
 
 		storage.TickAdRequest(db)
-		campaign := storage.RetrieveCampaign(db)
+		campaign, err := storage.RetrieveCampaign(db)
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		if campaign != nil {
 			c.JSON(http.StatusOK, createBidResponse(db, *campaign))
 		} else {
