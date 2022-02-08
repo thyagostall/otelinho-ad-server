@@ -112,7 +112,7 @@ func main() {
 		storage.TickAdRequest(db)
 		campaign := storage.RetrieveCampaign(db)
 		if campaign != nil {
-			c.JSON(http.StatusOK, createBidResponse(*campaign))
+			c.JSON(http.StatusOK, createBidResponse(db, *campaign))
 		} else {
 			c.Status(http.StatusNoContent)
 		}
@@ -158,8 +158,11 @@ func createDB() *sql.DB {
 	return db
 }
 
-func createBidResponse(c campaign.Campaign) bidResponse {
+func createBidResponse(db *sql.DB, c campaign.Campaign) bidResponse {
 	impressionID := uuid.New().String()
+	err := storage.CreateBudgetReversalControlRecord(db, impressionID, c.MaxBid)
+	fmt.Println(err)
+
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{

@@ -12,6 +12,21 @@ func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate
 	_, _ = stmt.Exec(creative, strStartDate, strEndDate, goal)
 }
 
+func CreateBudgetReversalControlRecord(db *sql.DB, impressionID string, maxBid float64) error {
+	stmt, err := db.Prepare("INSERT INTO budget_reversal_control (impression_id, expires_at, bid, consumed) VALUES ($1, $2, $3, $4);")
+	if err != nil {
+		return err
+	}
+
+	expiration := time.Now().Add(30 * time.Duration(time.Second))
+	_, err = stmt.Exec(impressionID, expiration, maxBid, false)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 	query := `
 		SELECT id, creative, start_date, end_date, goal, max_bid
@@ -19,6 +34,7 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 		JOIN pacing ON campaigns.id = pacing.campaign_id
 		WHERE start_date <= $1 AND end_date >= $2
 		AND floor(random() * (2^32-1))::bigint < velocity
+		AND remaining_budget >= max_bid
 		ORDER BY max_bid DESC
 	`
 
@@ -34,19 +50,26 @@ func RetrieveCampaign(db *sql.DB) *campaign.Campaign {
 	var goal uint
 	var maxBid float64
 
+	var firstCampaign campaign.Campaign
+	var secondCampaign campaign.Campaign
 	if rows.Next() {
 		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
-		firstCampaign := campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
+		firstCampaign = campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
 
 		if rows.Next() {
 			rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
-			secondCampaign := campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
+			secondCampaign = campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
 			firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
 		} else {
 			firstCampaign.MaxBid = 0.01
 		}
 
-		return &firstCampaign
+		stmt, _ = db.Prepare("UPDATE campaigns SET remaining_budget = remaining_budget - $1 WHERE id = $2 AND remaining_budget - $1 >= 0")
+		res, _ := stmt.Exec(firstCampaign.MaxBid/1000, firstCampaign.ID)
+		rowsAffected, _ := res.RowsAffected()
+		if rowsAffected > 0 {
+			return &firstCampaign
+		}
 	}
 
 	return nil
