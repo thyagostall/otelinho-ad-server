@@ -93,9 +93,17 @@ type eventTracker struct {
 	Event  int    `json:"event"`
 }
 
+type beaconRequest struct {
+	Event         string
+	EncodedBeacon string
+}
+
 func main() {
 	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
 	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
+
+	beacons := make(chan beaconRequest)
+	go processBeacons(beacons)
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
@@ -125,13 +133,7 @@ func main() {
 		eventType := c.Param("event-type")
 		eventMetadata := c.Param("event-metadata")
 
-		db := createDB()
-		defer db.Close()
-
-		err := beacon.RecordBeaconReceived(db, eventMetadata, eventType)
-		if err != nil {
-			fmt.Println(err)
-		}
+		beacons <- beaconRequest{Event: eventType, EncodedBeacon: eventMetadata}
 
 		pixel := []byte("\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3B")
 		c.Data(http.StatusOK, "image/gif", pixel)
@@ -151,6 +153,17 @@ func main() {
 		}
 	})
 	r.Run("localhost:3001")
+}
+
+func processBeacons(beacons chan beaconRequest) {
+	db := createDB()
+	defer db.Close()
+	for b := range beacons {
+		err := beacon.RecordBeaconReceived(db, b.EncodedBeacon, b.Event)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }
 
 func createDB() *sql.DB {
