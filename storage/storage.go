@@ -93,7 +93,7 @@ func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
 }
 
 func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
-	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal FROM campaigns WHERE id = $1")
+	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, remaining_budget FROM campaigns WHERE id = $1")
 	rows, _ := stmt.Query(campaignID)
 	defer rows.Close()
 
@@ -102,10 +102,11 @@ func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
 	var startDate time.Time
 	var endDate time.Time
 	var goal uint
+	var remainingBudget float64
 
 	for rows.Next() {
-		rows.Scan(&id, &creative, &startDate, &endDate, &goal)
-		return &campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal}
+		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &remainingBudget)
+		return &campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, RemainingBudget: remainingBudget}
 	}
 
 	return nil
