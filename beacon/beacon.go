@@ -14,15 +14,16 @@ import (
 )
 
 type beacon struct {
-	CampaignID   int    `json:"campaign_id"`
-	ImpressionID string `json:"impression_id"`
+	CampaignID   int     `json:"campaign_id"`
+	ImpressionID string  `json:"impression_id"`
+	BidValue     float64 `json:"bid_value"`
 }
 
 var secretKey = []byte("thesecretkey1234thesecretkey1234")
 var host = "6ab9-177-220-174-231.ngrok.io"
 
 func GenerateBeacon(campaign campaign.Campaign, impressionID string, event string) string {
-	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID, ImpressionID: impressionID})
+	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID, ImpressionID: impressionID, BidValue: campaign.MaxBid})
 	encrypted := encrypt(secretKey, beacon)
 	encoded := base64.URLEncoding.EncodeToString(encrypted)
 	return fmt.Sprintf("https://%s/event/%s/%s", host, event, encoded)
@@ -46,6 +47,20 @@ func RecordBeaconReceived(db *sql.DB, metadata string, event string) error {
 	_, err = stmt.Exec(b.CampaignID, event)
 	if err != nil {
 		return err
+	}
+
+	if event == "loss" {
+		bidValue := b.BidValue / 1000.0
+
+		stmt, err = db.Prepare("UPDATE campaigns SET remaining_budget = remaining_budget + $1 WHERE id = $2")
+		if err != nil {
+			return err
+		}
+
+		_, err = stmt.Exec(bidValue, b.CampaignID)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
