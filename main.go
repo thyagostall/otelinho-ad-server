@@ -13,85 +13,10 @@ import (
 	_ "github.com/lib/pq"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/campaign"
+	"thyago.com/otelinho/openrtb"
 	"thyago.com/otelinho/pacing"
 	"thyago.com/otelinho/storage"
 )
-
-// bid request
-type bidRequest struct {
-	ID     string `json:"id"`
-	At     int    `json:"at"`
-	Device device `json:"device"`
-	User   user   `json:"user"`
-	Regs   regs   `json:"regs"`
-	Site   site   `json:"site"`
-	Imp    []imp  `json:"imp"`
-}
-
-type device struct {
-}
-
-type user struct {
-}
-
-type regs struct {
-}
-
-type imp struct {
-}
-
-type site struct {
-}
-
-// bid response
-type bidResponse struct {
-	ID      string    `json:"id"`
-	SeatBid []seatBid `json:"seatbid"`
-}
-
-type seatBid struct {
-	Bid  []bidItem `json:"bid"`
-	Seat string    `json:"seat"`
-}
-
-type bidItem struct {
-	DemandSource string   `json:"demand_source"`
-	Price        float64  `json:"price"`
-	CampaignID   string   `json:"cid"`
-	ID           string   `json:"id"`
-	AdMarkup     string   `json:"adm"`
-	WinURL       string   `json:"nurl"`
-	LossURL      string   `json:"lurl"`
-	ADomain      []string `json:"adomain"`
-	Cat          []string `json:"cat"`
-	CrID         string   `json:"crid"`
-	ImpressionID string   `json:"impid"`
-	AdID         string   `json:"adid"`
-	AdmMediaType string   `json:"adm_media_type"`
-}
-
-// admarkup
-type adMarkup struct {
-	Native native `json:"native"`
-}
-
-type native struct {
-	Assets        []asset        `json:"assets"`
-	EventTrackers []eventTracker `json:"eventtrackers"`
-	Ver           string         `json:"ver"`
-}
-
-type asset struct {
-	ID       int                    `json:"id"`
-	Data     map[string]interface{} `json:"data"`
-	Required int                    `json:"required"`
-}
-
-type eventTracker struct {
-	Method int    `json:"method"`
-	URL    string `json:"url"`
-	Event  int    `json:"event"`
-}
 
 type beaconRequest struct {
 	Event         string
@@ -110,14 +35,14 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
-		var bid bidRequest
+		var bid openrtb.BidRequest
 
 		if err := c.BindJSON(&bid); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		storage.TickAdRequest(db)
+		go storage.TickAdRequest(db)
 		campaign, err := storage.RetrieveCampaign(db)
 		if err != nil {
 			fmt.Println(err)
@@ -176,14 +101,14 @@ func createDB() *sql.DB {
 	return db
 }
 
-func createBidResponse(db *sql.DB, c campaign.Campaign) bidResponse {
+func createBidResponse(db *sql.DB, c campaign.Campaign) openrtb.BidResponse {
 	impressionID := uuid.New().String()
-	return bidResponse{
+	return openrtb.BidResponse{
 		ID: "1",
-		SeatBid: []seatBid{
+		SeatBid: []openrtb.SeatBid{
 			{
 				Seat: "1",
-				Bid: []bidItem{
+				Bid: []openrtb.BidItem{
 					{
 						DemandSource: "direct",
 						Price:        c.MaxBid,
@@ -210,9 +135,9 @@ func createBidResponse(db *sql.DB, c campaign.Campaign) bidResponse {
 }
 
 func createAdMarkup(c campaign.Campaign, impressionID string) string {
-	adm := adMarkup{
-		Native: native{
-			Assets: []asset{
+	adm := openrtb.AdMarkup{
+		Native: openrtb.Native{
+			Assets: []openrtb.Asset{
 				{
 					ID: 1,
 					Data: map[string]interface{}{
@@ -222,7 +147,7 @@ func createAdMarkup(c campaign.Campaign, impressionID string) string {
 					Required: 1,
 				},
 			},
-			EventTrackers: []eventTracker{
+			EventTrackers: []openrtb.EventTracker{
 				{
 					Method: 1,
 					URL:    beacon.GenerateBeacon(c, impressionID, "impression"),
