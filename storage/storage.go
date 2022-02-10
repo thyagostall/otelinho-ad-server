@@ -12,21 +12,6 @@ func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate
 	_, _ = stmt.Exec(creative, strStartDate, strEndDate, goal)
 }
 
-func CreateBudgetReversalControlRecord(db *sql.DB, impressionID string, maxBid float64) error {
-	stmt, err := db.Prepare("INSERT INTO budget_reversal_control (impression_id, expires_at, bid, consumed) VALUES ($1, $2, $3, $4);")
-	if err != nil {
-		return err
-	}
-
-	expiration := time.Now().Add(30 * time.Duration(time.Second))
-	_, err = stmt.Exec(impressionID, expiration, maxBid, false)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
 	query := `
 		SELECT id, creative, start_date, end_date, goal, max_bid
@@ -38,8 +23,8 @@ func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
 		ORDER BY max_bid DESC
 	`
 
-	now := time.Now()
-	floorPrice := 0.01
+	now := time.Now().UTC()
+	floorPrice := 0.25
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -93,7 +78,7 @@ func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
 }
 
 func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
-	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, remaining_budget FROM campaigns WHERE id = $1")
+	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, budget, remaining_budget, max_bid FROM campaigns WHERE id = $1")
 	rows, _ := stmt.Query(campaignID)
 	defer rows.Close()
 
@@ -103,10 +88,12 @@ func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
 	var endDate time.Time
 	var goal uint
 	var remainingBudget float64
+	var budget float64
+	var maxBid float64
 
 	for rows.Next() {
-		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &remainingBudget)
-		return &campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, RemainingBudget: remainingBudget}
+		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &budget, &remainingBudget, &maxBid)
+		return &campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, RemainingBudget: remainingBudget, Budget: budget, MaxBid: maxBid}
 	}
 
 	return nil

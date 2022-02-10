@@ -102,8 +102,11 @@ func main() {
 	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
 	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
 
-	beacons := make(chan beaconRequest)
+	beacons := make(chan beaconRequest, 1000)
 	go processBeacons(beacons)
+
+	db := createDB()
+	defer db.Close()
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
@@ -113,9 +116,6 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-
-		db := createDB()
-		defer db.Close()
 
 		storage.TickAdRequest(db)
 		campaign, err := storage.RetrieveCampaign(db)
@@ -158,6 +158,7 @@ func main() {
 func processBeacons(beacons chan beaconRequest) {
 	db := createDB()
 	defer db.Close()
+
 	for b := range beacons {
 		err := beacon.RecordBeaconReceived(db, b.EncodedBeacon, b.Event)
 		if err != nil {
@@ -168,18 +169,15 @@ func processBeacons(beacons chan beaconRequest) {
 
 func createDB() *sql.DB {
 	db, _ := sql.Open("postgres", "host=localhost port=5432 user=otelinho password=devpassword dbname=otelinho sslmode=disable")
-	db.SetMaxIdleConns(10)
-	db.SetMaxOpenConns(20)
-	db.SetConnMaxIdleTime(1 * time.Second)
-	db.SetConnMaxLifetime(30 * time.Second)
+	db.SetMaxIdleConns(30)
+	db.SetMaxOpenConns(60)
+	db.SetConnMaxIdleTime(10 * time.Minute)
+	db.SetConnMaxLifetime(30 * time.Minute)
 	return db
 }
 
 func createBidResponse(db *sql.DB, c campaign.Campaign) bidResponse {
 	impressionID := uuid.New().String()
-	err := storage.CreateBudgetReversalControlRecord(db, impressionID, c.MaxBid)
-	fmt.Println(err)
-
 	return bidResponse{
 		ID: "1",
 		SeatBid: []seatBid{

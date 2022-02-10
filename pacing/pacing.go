@@ -2,6 +2,7 @@ package pacing
 
 import (
 	"database/sql"
+	"fmt"
 	"math/rand"
 	"time"
 
@@ -47,13 +48,22 @@ func AdjustVelocity(db *sql.DB, campaign *campaign.Campaign) (map[string]interfa
 		return nil, err
 	}
 
-	remaining := time.Until(campaign.EndDate)
-	ratio := campaign.RemainingBudget / remaining.Minutes() / inventory
+	remainingTime := time.Until(campaign.EndDate)
+	// elapsedTime := time.Since(campaign.StartDate)
+
+	var ratio float64
+	if currentCount > 0 {
+		projectedCount := (float64(currentCount) / (campaign.Budget - campaign.RemainingBudget)) * campaign.RemainingBudget
+		ratio = (projectedCount / remainingTime.Minutes()) / inventory
+	} else {
+		ratio = ((campaign.Budget / campaign.MaxBid * 1000.0) / remainingTime.Minutes()) / inventory
+		fmt.Printf("Impressions: %f\n", ratio)
+	}
 	newVelocity := uint32(ratio * float64(^uint32(0)))
 
 	res := make(map[string]interface{})
 	res["inventory"] = inventory
-	res["remaining_minutes"] = remaining.Minutes()
+	res["remaining_minutes"] = remainingTime.Minutes()
 	res["impressions"] = currentCount
 	res["remaining_budget"] = campaign.RemainingBudget
 	res["new_velocity"] = newVelocity

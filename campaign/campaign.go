@@ -10,4 +10,5 @@ type Campaign struct {
 	Goal            uint
 	MaxBid          float64
 	RemainingBudget float64
+	Budget          float64
 }
