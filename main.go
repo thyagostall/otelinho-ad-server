@@ -33,9 +33,6 @@ func timeit(endpoint string, handler func(http.ResponseWriter, *http.Request)) f
 }
 
 func main() {
-	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
-	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
-
 	beacons := make(chan beaconRequest, 1000)
 	go processBeacons(beacons)
 
