@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/campaign"
+	"thyago.com/otelinho/index"
 	"thyago.com/otelinho/openrtb"
 	"thyago.com/otelinho/pacing"
 	"thyago.com/otelinho/storage"
@@ -35,21 +36,18 @@ func main() {
 
 	r := gin.Default()
 	r.POST("/openrtb", func(c *gin.Context) {
-		var bid openrtb.BidRequest
+		var bid *openrtb.BidRequest
 
 		if err := c.BindJSON(&bid); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
-		go storage.TickAdRequest(db)
-		campaign, err := storage.RetrieveCampaign(db)
-		if err != nil {
-			fmt.Println(err)
-		}
-
+		campaigns := index.RetrieveLiveCampaigns()
+		campaign := storage.RetrieveCampaign(campaigns)
 		if campaign != nil {
-			c.JSON(http.StatusOK, createBidResponse(db, *campaign))
+			response := createBidResponse(campaign)
+			c.JSON(http.StatusOK, response)
 		} else {
 			c.Status(http.StatusNoContent)
 		}
@@ -77,6 +75,15 @@ func main() {
 			c.JSON(http.StatusOK, res)
 		}
 	})
+	r.POST("/warm-cache", func(c *gin.Context) {
+		campaigns, err := storage.ActiveCampaignsFromDatabase(db)
+		if err != nil {
+			c.String(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+		}
+
+		index.SetLiveCampaigns(campaigns)
+		c.Status(http.StatusCreated)
+	})
 	r.Run("localhost:3001")
 }
 
@@ -101,9 +108,9 @@ func createDB() *sql.DB {
 	return db
 }
 
-func createBidResponse(db *sql.DB, c campaign.Campaign) openrtb.BidResponse {
+func createBidResponse(c *campaign.Campaign) *openrtb.BidResponse {
 	impressionID := uuid.New().String()
-	return openrtb.BidResponse{
+	return &openrtb.BidResponse{
 		ID: "1",
 		SeatBid: []openrtb.SeatBid{
 			{
@@ -134,7 +141,7 @@ func createBidResponse(db *sql.DB, c campaign.Campaign) openrtb.BidResponse {
 	}
 }
 
-func createAdMarkup(c campaign.Campaign, impressionID string) string {
+func createAdMarkup(c *campaign.Campaign, impressionID string) string {
 	adm := openrtb.AdMarkup{
 		Native: openrtb.Native{
 			Assets: []openrtb.Asset{

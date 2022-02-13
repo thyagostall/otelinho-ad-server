@@ -22,7 +22,7 @@ type beacon struct {
 var secretKey = []byte("thesecretkey1234thesecretkey1234")
 var host = "6ab9-177-220-174-231.ngrok.io"
 
-func GenerateBeacon(campaign campaign.Campaign, impressionID string, event string) string {
+func GenerateBeacon(campaign *campaign.Campaign, impressionID string, event string) string {
 	beacon, _ := json.Marshal(beacon{CampaignID: campaign.ID, ImpressionID: impressionID, BidValue: campaign.MaxBid})
 	encrypted := encrypt(secretKey, beacon)
 	encoded := base64.URLEncoding.EncodeToString(encrypted)

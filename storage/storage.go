@@ -7,74 +7,56 @@ import (
 	"thyago.com/otelinho/campaign"
 )
 
-func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate string, goal uint) {
-	stmt, _ := db.Prepare("INSERT INTO campaigns (creative, start_date, end_date, goal) VALUES ($1, $2, $3, $4)")
-	_, _ = stmt.Exec(creative, strStartDate, strEndDate, goal)
-}
-
-func RetrieveCampaign(db *sql.DB) (*campaign.Campaign, error) {
+func ActiveCampaignsFromDatabase(db *sql.DB) ([]*campaign.Campaign, error) {
 	query := `
-		SELECT id, creative, start_date, end_date, goal, max_bid
+		SELECT id, creative, start_date, end_date, goal, max_bid, remaining_budget, budget
 		FROM campaigns
-		JOIN pacing ON campaigns.id = pacing.campaign_id
 		WHERE start_date <= $1 AND end_date >= $1
-		AND floor(random() * (2^32-1))::bigint < velocity
-		AND remaining_budget >= ($2 / 1000.00)
 		ORDER BY max_bid DESC
 	`
 
 	now := time.Now().UTC()
-	floorPrice := 0.25
 
 	stmt, err := db.Prepare(query)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := stmt.Query(now, floorPrice)
+	rows, err := stmt.Query(now)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var id int
-	var creative string
-	var startDate time.Time
-	var endDate time.Time
-	var goal uint
-	var maxBid float64
+	result := []*campaign.Campaign{}
+	for rows.Next() {
+		var c campaign.Campaign
+		rows.Scan(&c.ID, &c.Creative, &c.StartDate, &c.EndDate, &c.Goal, &c.MaxBid, &c.RemainingBudget, &c.Budget)
 
-	var firstCampaign campaign.Campaign
-	var secondCampaign campaign.Campaign
-	if rows.Next() {
-		rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
-		firstCampaign = campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
-
-		if rows.Next() {
-			rows.Scan(&id, &creative, &startDate, &endDate, &goal, &maxBid)
-			secondCampaign = campaign.Campaign{ID: id, Creative: creative, StartDate: startDate, EndDate: endDate, Goal: goal, MaxBid: maxBid}
-			firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
-		} else {
-			firstCampaign.MaxBid = floorPrice
-		}
-
-		stmt, err = db.Prepare("UPDATE campaigns SET remaining_budget = remaining_budget - $1 WHERE id = $2 AND remaining_budget - $1 >= 0")
-		if err != nil {
-			return nil, err
-		}
-		res, err := stmt.Exec(firstCampaign.MaxBid/1000, firstCampaign.ID)
-		if err != nil {
-			return nil, err
-		}
-		rowsAffected, err := res.RowsAffected()
-		if err != nil {
-			return nil, err
-		}
-		if rowsAffected > 0 {
-			return &firstCampaign, nil
-		}
+		result = append(result, &c)
 	}
 
-	return nil, nil
+	return result, nil
+}
+
+func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate string, goal uint) {
+	stmt, _ := db.Prepare("INSERT INTO campaigns (creative, start_date, end_date, goal) VALUES ($1, $2, $3, $4)")
+	_, _ = stmt.Exec(creative, strStartDate, strEndDate, goal)
+}
+
+func RetrieveCampaign(campaigns []*campaign.Campaign) *campaign.Campaign {
+	if len(campaigns) < 1 {
+		return nil
+	}
+
+	firstCampaign := campaigns[0]
+	if secondCampaign := campaigns[1]; secondCampaign != nil {
+		secondCampaign := campaigns[1]
+		firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
+	} else {
+		firstCampaign.MaxBid = 0.25
+	}
+
+	return firstCampaign
 }
 
 func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
