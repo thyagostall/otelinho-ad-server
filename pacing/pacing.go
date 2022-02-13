@@ -3,26 +3,11 @@ package pacing
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
 	"time"
 
 	"thyago.com/otelinho/campaign"
 	"thyago.com/otelinho/forecast"
 )
-
-func ShouldServe(db *sql.DB, campaign campaign.Campaign) bool {
-	stmt, _ := db.Prepare("SELECT velocity FROM pacing WHERE campaign_id = $1")
-	rows, _ := stmt.Query(campaign.ID)
-	if rows.Next() {
-		var velocity uint32
-		rows.Scan(&velocity)
-		randValue := rand.Uint32()
-
-		return randValue < velocity
-	}
-
-	return false
-}
 
 func AdjustVelocity(db *sql.DB, campaign *campaign.Campaign) (map[string]interface{}, error) {
 	queryImpressions := "SELECT count(*) FROM beacons WHERE campaign_id = $1 AND event = $2;"

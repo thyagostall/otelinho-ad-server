@@ -43,22 +43,6 @@ func CreateCampaign(db *sql.DB, creative string, strStartDate string, strEndDate
 	_, _ = stmt.Exec(creative, strStartDate, strEndDate, goal)
 }
 
-func RetrieveCampaign(campaigns []*campaign.Campaign) *campaign.Campaign {
-	if len(campaigns) < 1 {
-		return nil
-	}
-
-	firstCampaign := campaigns[0]
-	if secondCampaign := campaigns[1]; secondCampaign != nil {
-		secondCampaign := campaigns[1]
-		firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
-	} else {
-		firstCampaign.MaxBid = 0.25
-	}
-
-	return firstCampaign
-}
-
 func RetrieveCampaignByID(db *sql.DB, campaignID int) *campaign.Campaign {
 	stmt, _ := db.Prepare("SELECT id, creative, start_date, end_date, goal, budget, remaining_budget, max_bid FROM campaigns WHERE id = $1")
 	rows, _ := stmt.Query(campaignID)
