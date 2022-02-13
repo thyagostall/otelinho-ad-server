@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"thyago.com/otelinho/beacon"
@@ -34,35 +34,49 @@ func main() {
 	db := createDB()
 	defer db.Close()
 
-	r := gin.Default()
-	r.POST("/openrtb", func(c *gin.Context) {
-		var bid *openrtb.BidRequest
+	http.HandleFunc("/openrtb", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.NotFound(w, r)
+			return
+		}
 
-		if err := c.BindJSON(&bid); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		var bid openrtb.BidRequest
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&bid)
+
+		if err != nil {
 			return
 		}
 
 		campaigns := index.RetrieveLiveCampaigns()
 		campaign := storage.RetrieveCampaign(campaigns)
 		if campaign != nil {
-			response := createBidResponse(campaign)
-			c.JSON(http.StatusOK, response)
+			response, _ := json.Marshal(createBidResponse(campaign))
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
 		} else {
-			c.Status(http.StatusNoContent)
+			w.WriteHeader(http.StatusNoContent)
 		}
 	})
-	r.GET("/event/:event-type/:event-metadata", func(c *gin.Context) {
-		eventType := c.Param("event-type")
-		eventMetadata := c.Param("event-metadata")
+	http.HandleFunc("/event/:event-type/:event-metadata", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		items := strings.Split(path, "/")
+
+		eventType := items[1]
+		eventMetadata := items[2]
 
 		beacons <- beaconRequest{Event: eventType, EncodedBeacon: eventMetadata}
 
 		pixel := []byte("\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\x00\x00\x00\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02\x44\x01\x00\x3B")
-		c.Data(http.StatusOK, "image/gif", pixel)
+		w.WriteHeader(http.StatusOK)
+		w.Header().Add("Content-Type", "image/gif")
+		w.Write(pixel)
 	})
-	r.GET("/velocity/:campaign-id", func(c *gin.Context) {
-		campaignID, _ := strconv.Atoi(c.Param("campaign-id"))
+	http.HandleFunc("/velocity/:campaign-id", func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		items := strings.Split(path, "/")
+
+		campaignID, _ := strconv.Atoi(items[1])
 
 		db := createDB()
 		defer db.Close()
@@ -70,21 +84,27 @@ func main() {
 		campaign := storage.RetrieveCampaignByID(db, campaignID)
 		res, err := pacing.AdjustVelocity(db, campaign)
 		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "%v", err)
 		} else {
-			c.JSON(http.StatusOK, res)
+			response, _ := json.Marshal(res)
+			w.WriteHeader(http.StatusOK)
+			w.Write(response)
 		}
 	})
-	r.POST("/warm-cache", func(c *gin.Context) {
+	http.HandleFunc("/warm-cache", func(w http.ResponseWriter, r *http.Request) {
 		campaigns, err := storage.ActiveCampaignsFromDatabase(db)
 		if err != nil {
-			c.String(http.StatusInternalServerError, fmt.Sprintf("%v", err))
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "%v", err)
+			return
 		}
 
 		index.SetLiveCampaigns(campaigns)
-		c.Status(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 	})
-	r.Run("localhost:3001")
+
+	http.ListenAndServe("localhost:3000", nil)
 }
 
 func processBeacons(beacons chan beaconRequest) {
