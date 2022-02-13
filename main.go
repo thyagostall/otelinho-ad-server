@@ -24,6 +24,14 @@ type beaconRequest struct {
 	EncodedBeacon string
 }
 
+func timeit(endpoint string, handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		handler(w, r)
+		fmt.Printf("elapsed: %dμs\t[%s]\n", time.Since(start).Microseconds(), endpoint)
+	}
+}
+
 func main() {
 	// storage.CreateCampaign(db, "t:m4WgTi-BIDEdAu04G3DEaw;637797729088765952", "2022-03-01T00:00:00Z", "2022-04-10T00:00:00Z")
 	// storage.CreateCampaign(db, "t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305", "2022-01-01T00:00:00Z", "2022-02-10T00:00:00Z")
@@ -34,7 +42,7 @@ func main() {
 	db := createDB()
 	defer db.Close()
 
-	http.HandleFunc("/openrtb", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/openrtb", timeit("openrtb", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.NotFound(w, r)
 			return
@@ -57,13 +65,13 @@ func main() {
 		} else {
 			w.WriteHeader(http.StatusNoContent)
 		}
-	})
-	http.HandleFunc("/event/:event-type/:event-metadata", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	http.HandleFunc("/event/", timeit("event", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		items := strings.Split(path, "/")
 
-		eventType := items[1]
-		eventMetadata := items[2]
+		eventType := items[2]
+		eventMetadata := items[3]
 
 		beacons <- beaconRequest{Event: eventType, EncodedBeacon: eventMetadata}
 
@@ -71,12 +79,12 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Add("Content-Type", "image/gif")
 		w.Write(pixel)
-	})
-	http.HandleFunc("/velocity/:campaign-id", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	http.HandleFunc("/velocity/", timeit("velocity", func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
 		items := strings.Split(path, "/")
 
-		campaignID, _ := strconv.Atoi(items[1])
+		campaignID, _ := strconv.Atoi(items[2])
 
 		db := createDB()
 		defer db.Close()
@@ -91,8 +99,8 @@ func main() {
 			w.WriteHeader(http.StatusOK)
 			w.Write(response)
 		}
-	})
-	http.HandleFunc("/warm-cache", func(w http.ResponseWriter, r *http.Request) {
+	}))
+	http.HandleFunc("/warm-cache", timeit("warm-cache", func(w http.ResponseWriter, r *http.Request) {
 		campaigns, err := storage.ActiveCampaignsFromDatabase(db)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -102,7 +110,7 @@ func main() {
 
 		index.SetLiveCampaigns(campaigns)
 		w.WriteHeader(http.StatusOK)
-	})
+	}))
 
 	http.ListenAndServe("localhost:3000", nil)
 }
