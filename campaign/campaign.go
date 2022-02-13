@@ -11,4 +11,5 @@ type Campaign struct {
 	MaxBid          float64
 	RemainingBudget float64
 	Budget          float64
+	PacingFactor    int64
 }

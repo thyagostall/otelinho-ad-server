@@ -53,6 +53,7 @@ func main() {
 		}
 
 		campaigns := index.RetrieveLiveCampaigns()
+		campaigns = pacing.PaceCampaigns(campaigns)
 		campaign := auction.RunAuction(campaigns)
 		if campaign != nil {
 			response, _ := json.Marshal(openrtb.Encode(campaign))

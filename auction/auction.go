@@ -5,15 +5,15 @@ import "thyago.com/otelinho/campaign"
 func RunAuction(campaigns []*campaign.Campaign) *campaign.Campaign {
 	if len(campaigns) < 1 {
 		return nil
+	} else if len(campaigns) == 1 {
+		result := campaigns[0]
+		result.MaxBid = 0.25
+		return result
 	}
 
-	firstCampaign := campaigns[0]
-	if secondCampaign := campaigns[1]; secondCampaign != nil {
-		secondCampaign := campaigns[1]
-		firstCampaign.MaxBid = secondCampaign.MaxBid + 0.01
-	} else {
-		firstCampaign.MaxBid = 0.25
-	}
+	first := campaigns[0]
+	second := campaigns[1]
+	first.MaxBid = second.MaxBid + 0.01
 
-	return firstCampaign
+	return first
 }

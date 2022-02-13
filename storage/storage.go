@@ -9,8 +9,9 @@ import (
 
 func ActiveCampaignsFromDatabase(db *sql.DB) ([]*campaign.Campaign, error) {
 	query := `
-		SELECT id, creative, start_date, end_date, goal, max_bid, remaining_budget, budget
+		SELECT id, creative, start_date, end_date, goal, max_bid, remaining_budget, budget, velocity
 		FROM campaigns
+		JOIN pacing ON campaigns.id = pacing.campaign_id
 		WHERE start_date <= $1 AND end_date >= $1
 		ORDER BY max_bid DESC
 	`
@@ -30,7 +31,7 @@ func ActiveCampaignsFromDatabase(db *sql.DB) ([]*campaign.Campaign, error) {
 	result := []*campaign.Campaign{}
 	for rows.Next() {
 		var c campaign.Campaign
-		rows.Scan(&c.ID, &c.Creative, &c.StartDate, &c.EndDate, &c.Goal, &c.MaxBid, &c.RemainingBudget, &c.Budget)
+		rows.Scan(&c.ID, &c.Creative, &c.StartDate, &c.EndDate, &c.Goal, &c.MaxBid, &c.RemainingBudget, &c.Budget, &c.PacingFactor)
 
 		result = append(result, &c)
 	}

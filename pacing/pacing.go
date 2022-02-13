@@ -3,11 +3,22 @@ package pacing
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"time"
 
 	"thyago.com/otelinho/campaign"
 	"thyago.com/otelinho/forecast"
 )
+
+func PaceCampaigns(campaigns []*campaign.Campaign) []*campaign.Campaign {
+	result := []*campaign.Campaign{}
+	for _, c := range campaigns {
+		if rand.Int63() < c.PacingFactor {
+			result = append(result, c)
+		}
+	}
+	return result
+}
 
 func AdjustVelocity(db *sql.DB, campaign *campaign.Campaign) (map[string]interface{}, error) {
 	queryImpressions := "SELECT count(*) FROM beacons WHERE campaign_id = $1 AND event = $2;"
