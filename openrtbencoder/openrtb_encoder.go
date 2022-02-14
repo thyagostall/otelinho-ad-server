@@ -1,4 +1,4 @@
-package openrtb
+package openrtbencoder
 
 import (
 	"encoding/json"
@@ -7,16 +7,17 @@ import (
 	"github.com/google/uuid"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/campaign"
+	"thyago.com/otelinho/openrtb"
 )
 
-func Encode(c *campaign.Campaign) *BidResponse {
+func Encode(c *campaign.Campaign) *openrtb.BidResponse {
 	impressionID := uuid.New().String()
-	return &BidResponse{
+	return &openrtb.BidResponse{
 		ID: "1",
-		SeatBid: []SeatBid{
+		SeatBid: []openrtb.SeatBid{
 			{
 				Seat: "1",
-				Bid: []BidItem{
+				Bid: []openrtb.BidItem{
 					{
 						DemandSource: "direct",
 						Price:        c.MaxBid,
@@ -43,9 +44,9 @@ func Encode(c *campaign.Campaign) *BidResponse {
 }
 
 func createAdMarkup(c *campaign.Campaign, impressionID string) string {
-	adm := AdMarkup{
-		Native: Native{
-			Assets: []Asset{
+	adm := openrtb.AdMarkup{
+		Native: openrtb.Native{
+			Assets: []openrtb.Asset{
 				{
 					ID: 1,
 					Data: map[string]interface{}{
@@ -55,7 +56,7 @@ func createAdMarkup(c *campaign.Campaign, impressionID string) string {
 					Required: 1,
 				},
 			},
-			EventTrackers: []EventTracker{
+			EventTrackers: []openrtb.EventTracker{
 				{
 					Method: 1,
 					URL:    beacon.GenerateBeacon(c, impressionID, "impression"),

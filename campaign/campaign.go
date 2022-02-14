@@ -1,6 +1,8 @@
 package campaign
 
-import "time"
+import (
+	"time"
+)
 
 type Campaign struct {
 	ID              int
@@ -12,4 +14,5 @@ type Campaign struct {
 	RemainingBudget float64
 	Budget          float64
 	PacingFactor    int64
+	Targeting       []TargetingRule
 }

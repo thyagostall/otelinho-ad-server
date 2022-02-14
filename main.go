@@ -14,8 +14,10 @@ import (
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/index"
 	"thyago.com/otelinho/openrtb"
+	"thyago.com/otelinho/openrtbencoder"
 	"thyago.com/otelinho/pacing"
 	"thyago.com/otelinho/storage"
+	"thyago.com/otelinho/targeting"
 )
 
 type beaconRequest struct {
@@ -53,10 +55,11 @@ func main() {
 		}
 
 		campaigns := index.RetrieveLiveCampaigns()
+		campaigns = targeting.RankAndExclude(&bid, campaigns)
 		campaigns = pacing.PaceCampaigns(campaigns)
 		campaign := auction.RunAuction(campaigns)
 		if campaign != nil {
-			response, _ := json.Marshal(openrtb.Encode(campaign))
+			response, _ := json.Marshal(openrtbencoder.Encode(campaign))
 			w.WriteHeader(http.StatusOK)
 			w.Write(response)
 		} else {
