@@ -2,6 +2,8 @@ package campaign
 
 import (
 	"time"
+
+	"thyago.com/otelinho/targetingrules"
 )
 
 type Campaign struct {
@@ -14,5 +16,5 @@ type Campaign struct {
 	RemainingBudget float64
 	Budget          float64
 	PacingFactor    int64
-	Targeting       []TargetingRule
+	Targeting       []targetingrules.TargetingRule
 }

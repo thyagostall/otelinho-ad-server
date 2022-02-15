@@ -1,29 +1,44 @@
-package campaign
+package targetingrules
 
 import (
+	"regexp"
+	"strconv"
 	"time"
 
 	"thyago.com/otelinho/openrtb"
 )
 
-type TargetingOperator uint
-
-const (
-	Equal TargetingOperator = iota
-	NotEqual
-	LessThan
-	LessThanOrEqual
-	GreaterThan
-	GreaterThanOrEqual
-)
-
-type TargetingRule interface {
-	ShouldInclude(*openrtb.BidRequest) bool
-}
-
 type AgeTargetingRule struct {
 	Operator TargetingOperator
 	Value    uint
+}
+
+var regexpOperatorValue *regexp.Regexp
+
+func init() {
+	regexpOperatorValue, _ = regexp.Compile(`(==|!=|<|<=|>|>=)(\d+)`)
+}
+
+func NewAgeTargetingRule(rawValue string) AgeTargetingRule {
+	elements := regexpOperatorValue.FindStringSubmatch(rawValue)
+
+	var operator TargetingOperator
+	if elements[1] == "==" {
+		operator = Equal
+	} else if elements[1] == "!=" {
+		operator = NotEqual
+	} else if elements[1] == "<" {
+		operator = LessThan
+	} else if elements[1] == "<=" {
+		operator = LessThanOrEqual
+	} else if elements[1] == ">" {
+		operator = GreaterThan
+	} else if elements[1] == ">=" {
+		operator = GreaterThanOrEqual
+	}
+
+	value, _ := strconv.ParseUint(elements[2], 10, 32)
+	return AgeTargetingRule{Operator: operator, Value: uint(value)}
 }
 
 func (r AgeTargetingRule) ShouldInclude(candidate *openrtb.BidRequest) bool {

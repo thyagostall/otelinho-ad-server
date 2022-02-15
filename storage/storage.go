@@ -2,11 +2,10 @@ package storage
 
 import (
 	"database/sql"
-	"regexp"
-	"strconv"
 	"time"
 
 	"thyago.com/otelinho/campaign"
+	"thyago.com/otelinho/targetingrules"
 )
 
 func ActiveCampaignsFromDatabase(db *sql.DB) ([]*campaign.Campaign, error) {
@@ -47,7 +46,7 @@ func ActiveCampaignsFromDatabase(db *sql.DB) ([]*campaign.Campaign, error) {
 	return result, nil
 }
 
-func fetchTargeting(db *sql.DB, c *campaign.Campaign) ([]campaign.TargetingRule, error) {
+func fetchTargeting(db *sql.DB, c *campaign.Campaign) ([]targetingrules.TargetingRule, error) {
 	query := "SELECT key, value FROM campaign_targeting WHERE campaign_id = $1"
 	stmt, err := db.Prepare(query)
 	if err != nil {
@@ -59,36 +58,17 @@ func fetchTargeting(db *sql.DB, c *campaign.Campaign) ([]campaign.TargetingRule,
 	}
 	defer rows.Close()
 
-	result := []campaign.TargetingRule{}
+	result := []targetingrules.TargetingRule{}
 	var key string
 	var value string
 	for rows.Next() {
 		rows.Scan(&key, &value)
 
-		if key == "age" {
-			r, _ := regexp.Compile(`(==|!=|<|<=|>|>=)(\d+)`)
-			elements := r.FindStringSubmatch(value)
-
-			var operator campaign.TargetingOperator
-			if elements[1] == "==" {
-				operator = campaign.Equal
-			} else if elements[1] == "!=" {
-				operator = campaign.NotEqual
-			} else if elements[1] == "<" {
-				operator = campaign.LessThan
-			} else if elements[1] == "<=" {
-				operator = campaign.LessThanOrEqual
-			} else if elements[1] == ">" {
-				operator = campaign.GreaterThan
-			} else if elements[1] == ">=" {
-				operator = campaign.GreaterThanOrEqual
-			}
-
-			value, _ := strconv.ParseUint(elements[2], 10, 32)
-
-			var targetingRule campaign.TargetingRule = campaign.AgeTargetingRule{Operator: operator, Value: uint(value)}
-			result = append(result, targetingRule)
+		targetingRule, err := targetingrules.New(key, value)
+		if err != nil {
+			return nil, err
 		}
+		result = append(result, targetingRule)
 	}
 
 	return result, nil
