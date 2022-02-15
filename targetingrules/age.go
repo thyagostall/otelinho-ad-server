@@ -42,7 +42,7 @@ func NewAgeTargetingRule(rawValue string) AgeTargetingRule {
 }
 
 func (r AgeTargetingRule) ShouldInclude(candidate *openrtb.BidRequest) bool {
-	year := time.Now().UTC().Year()
+	year := uint(time.Now().UTC().Year())
 	age := year - candidate.User.YOB
 
 	if r.Operator == Equal && candidate.User.YOB == age {

@@ -62,7 +62,7 @@ const (
 
 type User struct {
 	ID   string `json:"id"`
-	YOB  int    `json:"yob"`
+	YOB  uint   `json:"yob"`
 	Data []Data `json:"data"`
 }
 
