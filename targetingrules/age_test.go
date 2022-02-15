@@ -2,6 +2,7 @@ package targetingrules
 
 import (
 	"testing"
+	"time"
 
 	"thyago.com/otelinho/openrtb"
 )
@@ -34,16 +35,26 @@ func TestAge(t *testing.T) {
 }
 
 func TestShouldInclude(t *testing.T) {
+	now := uint(time.Now().Year())
+
 	cases := []struct {
 		rule           string
 		yob            uint
 		expectedResult bool
 	}{
-		{rule: ">10", yob: 1990, expectedResult: true},
-		{rule: "<10", yob: 1990, expectedResult: false},
-		{rule: "==10", yob: 1990, expectedResult: false},
-		{rule: "<=10", yob: 1990, expectedResult: false},
-		{rule: ">=10", yob: 1990, expectedResult: true},
+		{rule: ">30", yob: now - 31, expectedResult: true},
+		{rule: "<30", yob: now - 29, expectedResult: true},
+		{rule: "==30", yob: now - 30, expectedResult: true},
+		{rule: "!=30", yob: now, expectedResult: true},
+		{rule: "<=30", yob: now - 30, expectedResult: true},
+		{rule: ">=30", yob: now - 30, expectedResult: true},
+
+		{rule: ">30", yob: now - 29, expectedResult: false},
+		{rule: "<30", yob: now - 31, expectedResult: false},
+		{rule: "==30", yob: now, expectedResult: false},
+		{rule: "!=30", yob: now - 30, expectedResult: false},
+		{rule: "<=30", yob: now - 31, expectedResult: false},
+		{rule: ">=30", yob: now - 29, expectedResult: false},
 	}
 
 	for _, tt := range cases {
@@ -51,7 +62,7 @@ func TestShouldInclude(t *testing.T) {
 
 		result := rule.ShouldInclude(createBidRequest(tt.yob))
 		if result != tt.expectedResult {
-			t.Fatalf("Unexpected result: %v, should be %v", result, tt.expectedResult)
+			t.Fatalf("Unexpected result: %v, should be %v (Rule: %s, YOB: %d)", result, tt.expectedResult, tt.rule, tt.yob)
 		}
 	}
 }

@@ -45,17 +45,17 @@ func (r AgeTargetingRule) ShouldInclude(candidate *openrtb.BidRequest) bool {
 	year := uint(time.Now().UTC().Year())
 	age := year - candidate.User.YOB
 
-	if r.Operator == Equal && candidate.User.YOB == age {
+	if r.Operator == Equal && age == r.Value {
 		return true
-	} else if r.Operator == NotEqual && candidate.User.YOB != age {
+	} else if r.Operator == NotEqual && age != r.Value {
 		return true
-	} else if r.Operator == LessThan && candidate.User.YOB < age {
+	} else if r.Operator == LessThan && age < r.Value {
 		return true
-	} else if r.Operator == LessThanOrEqual && candidate.User.YOB <= age {
+	} else if r.Operator == LessThanOrEqual && age <= r.Value {
 		return true
-	} else if r.Operator == GreaterThan && candidate.User.YOB > age {
+	} else if r.Operator == GreaterThan && age > r.Value {
 		return true
-	} else if r.Operator == GreaterThanOrEqual && candidate.User.YOB >= age {
+	} else if r.Operator == GreaterThanOrEqual && age >= r.Value {
 		return true
 	} else {
 		return false

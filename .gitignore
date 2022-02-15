@@ -4,3 +4,6 @@
 gin-bin
 
 .database
+
+cover.out
+cover.html
