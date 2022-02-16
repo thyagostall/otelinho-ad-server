@@ -15,6 +15,8 @@ const (
 	LessThanOrEqual
 	GreaterThan
 	GreaterThanOrEqual
+	In
+	NotIn
 )
 
 type TargetingRule interface {
@@ -24,6 +26,8 @@ type TargetingRule interface {
 func New(rule string, value string) (TargetingRule, error) {
 	if rule == "age" {
 		return NewAgeTargetingRule(value), nil
+	} else if rule == "language" {
+		return NewLanguageTargetingRule(value), nil
 	}
 
 	return nil, fmt.Errorf("invalid rule: %s", rule)

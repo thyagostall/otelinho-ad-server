@@ -13,14 +13,14 @@ type AgeTargetingRule struct {
 	Value    uint
 }
 
-var regexpOperatorValue *regexp.Regexp
+var regexpAgeOperatorValue *regexp.Regexp
 
 func init() {
-	regexpOperatorValue, _ = regexp.Compile(`(==|!=|<|<=|>|>=)(\d+)`)
+	regexpAgeOperatorValue, _ = regexp.Compile(`(==|!=|<|<=|>|>=)(\d+)`)
 }
 
 func NewAgeTargetingRule(rawValue string) AgeTargetingRule {
-	elements := regexpOperatorValue.FindStringSubmatch(rawValue)
+	elements := regexpAgeOperatorValue.FindStringSubmatch(rawValue)
 
 	var operator TargetingOperator
 	if elements[1] == "==" {

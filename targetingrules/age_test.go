@@ -7,7 +7,7 @@ import (
 	"thyago.com/otelinho/openrtb"
 )
 
-func TestAge(t *testing.T) {
+func TestNewAgeRule(t *testing.T) {
 	cases := []struct {
 		input    string
 		operator TargetingOperator
@@ -34,7 +34,7 @@ func TestAge(t *testing.T) {
 	}
 }
 
-func TestShouldInclude(t *testing.T) {
+func TestAgeShouldInclude(t *testing.T) {
 	now := uint(time.Now().Year())
 
 	cases := []struct {
@@ -60,14 +60,14 @@ func TestShouldInclude(t *testing.T) {
 	for _, tt := range cases {
 		rule := NewAgeTargetingRule(tt.rule)
 
-		result := rule.ShouldInclude(createBidRequest(tt.yob))
+		result := rule.ShouldInclude(createAgeBidRequest(tt.yob))
 		if result != tt.expectedResult {
 			t.Fatalf("Unexpected result: %v, should be %v (Rule: %s, YOB: %d)", result, tt.expectedResult, tt.rule, tt.yob)
 		}
 	}
 }
 
-func createBidRequest(yob uint) *openrtb.BidRequest {
+func createAgeBidRequest(yob uint) *openrtb.BidRequest {
 	return &openrtb.BidRequest{
 		User: openrtb.User{YOB: yob},
 	}
