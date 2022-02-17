@@ -7,7 +7,7 @@ func RunAuction(campaigns []*campaign.Campaign) *campaign.Campaign {
 		return nil
 	} else if len(campaigns) == 1 {
 		result := campaigns[0]
-		result.MaxBid = 0.25
+		result.MaxBid = PriceFloor()
 		return result
 	}
 
@@ -16,4 +16,8 @@ func RunAuction(campaigns []*campaign.Campaign) *campaign.Campaign {
 	first.MaxBid = second.MaxBid + 0.01
 
 	return first
+}
+
+func PriceFloor() float64 {
+	return 0.25
 }
