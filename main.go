@@ -13,6 +13,7 @@ import (
 	"thyago.com/otelinho/auction"
 	"thyago.com/otelinho/beacon"
 	"thyago.com/otelinho/index"
+	"thyago.com/otelinho/manage"
 	"thyago.com/otelinho/openrtb"
 	"thyago.com/otelinho/openrtbencoder"
 	"thyago.com/otelinho/pacing"
@@ -111,8 +112,21 @@ func main() {
 		index.SetLiveCampaigns(campaigns)
 		w.WriteHeader(http.StatusOK)
 	}))
+	http.HandleFunc("/manage/campaigns", timeit("manage/campaigns", func(w http.ResponseWriter, r *http.Request) {
+		campaigns, err := manage.RetrieveCampaigns(db)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprintf(w, "%v", err)
+			return
+		}
 
-	http.ListenAndServe("localhost:3000", nil)
+		serializedCampaigns, _ := json.Marshal(campaigns)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.WriteHeader(http.StatusOK)
+		w.Write(serializedCampaigns)
+	}))
+
+	http.ListenAndServe("localhost:4000", nil)
 }
 
 func processBeacons(beacons chan beaconRequest) {
