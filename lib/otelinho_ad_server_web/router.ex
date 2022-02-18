@@ -9,6 +9,7 @@ defmodule OtelinhoAdServerWeb.Router do
     pipe_through :api
 
     post "/openrtb", OpenRTB, :openrtb
+    get "/event/:event_type/:event_data", Beacons, :event
   end
 
   # Enables LiveDashboard only for development
