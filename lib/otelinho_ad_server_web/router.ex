@@ -5,8 +5,10 @@ defmodule OtelinhoAdServerWeb.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/api", OtelinhoAdServerWeb do
+  scope "/", OtelinhoAdServerWeb do
     pipe_through :api
+
+    post "/openrtb", OpenRTB, :openrtb
   end
 
   # Enables LiveDashboard only for development

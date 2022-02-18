@@ -2,10 +2,10 @@ import Config
 
 # Configure your database
 config :otelinho_ad_server, OtelinhoAdServer.Repo,
-  username: "postgres",
-  password: "postgres",
+  username: "otelinho",
+  password: "devpassword",
   hostname: "localhost",
-  database: "otelinho_ad_server_dev",
+  database: "otelinho",
   show_sensitive_data_on_connection_error: true,
   pool_size: 10
 
