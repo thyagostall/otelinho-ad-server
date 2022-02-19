@@ -1,22 +1,30 @@
 defmodule OtelinhoAdServerWeb.OpenRTB do
   use OtelinhoAdServerWeb, :controller
 
+  alias OtelinhoAdServer.Index
+  alias OtelinhoAdServer.Auction
+
   def openrtb(conn, _params) do
-    json(conn, bid_response())
+    response = Index.retrieve_active_campaigns()
+    |> Auction.run_auction()
+    |> bid_response()
+
+    json(conn, response)
   end
 
-  defp bid_response() do
+  defp bid_response(campaign) do
     %{
       seatbid: [
         %{
           bid: [
             %{
               demand_source: "direct",
-              price: 7,
-              cid: "1",
-              id: "3c8e88f7-9be3-46c3-8c83-26a69fd68e6d",
-              adm: "{\"native\":{\"assets\":[{\"id\":1,\"data\":{\"type\":501,\"value\":\"t:pWE-0YwL2ycRagbqsCSBuQ;642229909710946305\"},\"required\":1}],\"eventtrackers\":[{\"method\":1,\"url\":\"http://localhost:4000/event/impression/data\",\"event\":1},{\"method\":1,\"url\":\"http://localhost:4000/event/${EVENT_TYPE}/data\",\"event\":600}],\"ver\":\"1.2\"}}",
-              nurl: "http://localhost:4000/winnotice",
+              price: Decimal.to_float(campaign.max_bid),
+              cid: to_string(campaign.id),
+              id: UUID.uuid4(),
+              adm: Poison.encode!(adm(campaign)),
+              nurl: "http://localhost:4000/win",
+              lurl: "http://localhost:4000/loss",
               adomain: [
                   ""
               ],
@@ -24,7 +32,7 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
                   "IAB12-3"
               ],
               crid: "1",
-              impid: "25eed2e8-6520-47cb-a22c-15ef9b6af4c1",
+              impid: UUID.uuid4(),
               adid: "1",
               adm_media_type: "native"
             }
@@ -33,6 +41,36 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
         }
       ],
       id: "1"
+    }
+  end
+
+  defp adm(campaign) do
+    %{
+      native: %{
+        assets: [
+          %{
+            id: 1,
+            data: %{
+              type: 501,
+              value: campaign.creative
+            },
+            required: 1
+          }
+        ],
+        eventtrackers: [
+          %{
+            method: 1,
+            url: "http://localhost:4000/event/impression/data",
+            event: 1
+          },
+          %{
+            method: 1,
+            url: "http://localhost:4000/event/${EVENT_TYPE}/data",
+            event: 600
+          }
+        ],
+        ver: "1.2"
+      }
     }
   end
 end
