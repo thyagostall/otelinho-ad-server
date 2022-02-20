@@ -12,6 +12,7 @@ defmodule OtelinhoAdServer.Auction do
   end
 
   defp choose_campaign([]), do: nil
+  defp choose_campaign([campaign]), do: %{campaign | max_bid: Decimal.new("0.25")}
   defp choose_campaign([first, second | _]) do
     %{first | max_bid: Decimal.add(second.max_bid, Decimal.new("0.01"))}
   end

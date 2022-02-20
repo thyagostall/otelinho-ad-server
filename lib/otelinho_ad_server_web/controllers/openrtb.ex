@@ -4,9 +4,11 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
   alias OtelinhoAdServer.Index
   alias OtelinhoAdServer.Auction
   alias OtelinhoAdServer.BeaconGenerator
+  alias OtelinhoAdServer.Pacing
 
   def openrtb(conn, _params) do
     campaign = Index.retrieve_active_campaigns()
+    |> Pacing.filter()
     |> Auction.run_auction()
 
     case campaign do
