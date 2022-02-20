@@ -18,6 +18,8 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
   end
 
   defp bid_response(campaign) do
+    payload = BeaconGenerator.generate_payload(campaign)
+
     %{
       seatbid: [
         %{
@@ -27,9 +29,9 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
               price: Decimal.to_float(campaign.max_bid),
               cid: to_string(campaign.id),
               id: UUID.uuid4(),
-              adm: Poison.encode!(adm(campaign)),
-              nurl: BeaconGenerator.generate("win", campaign),
-              lurl: BeaconGenerator.generate("loss", campaign),
+              adm: Poison.encode!(adm(campaign, payload)),
+              nurl: BeaconGenerator.generate_url("win", payload),
+              lurl: BeaconGenerator.generate_url("loss", payload),
               adomain: [
                   ""
               ],
@@ -49,7 +51,7 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
     }
   end
 
-  defp adm(campaign) do
+  defp adm(campaign, beacon_payload) do
     %{
       native: %{
         assets: [
@@ -65,12 +67,12 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
         eventtrackers: [
           %{
             method: 1,
-            url: BeaconGenerator.generate("impression", campaign),
+            url: BeaconGenerator.generate_url("impression", beacon_payload),
             event: 1
           },
           %{
             method: 1,
-            url: BeaconGenerator.generate("%{EVENT_TYPE}", campaign),
+            url: BeaconGenerator.generate_url("%{EVENT_TYPE}", beacon_payload),
             event: 600
           }
         ],
