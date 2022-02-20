@@ -3,13 +3,16 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
 
   alias OtelinhoAdServer.Index
   alias OtelinhoAdServer.Auction
+  alias OtelinhoAdServer.BeaconGenerator
 
   def openrtb(conn, _params) do
-    response = Index.retrieve_active_campaigns()
+    campaign = Index.retrieve_active_campaigns()
     |> Auction.run_auction()
-    |> bid_response()
 
-    json(conn, response)
+    case campaign do
+      nil -> send_resp(conn, 204, "")
+      _ -> json(conn, bid_response(campaign))
+    end
   end
 
   defp bid_response(campaign) do
@@ -23,8 +26,8 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
               cid: to_string(campaign.id),
               id: UUID.uuid4(),
               adm: Poison.encode!(adm(campaign)),
-              nurl: "http://localhost:4000/win",
-              lurl: "http://localhost:4000/loss",
+              nurl: BeaconGenerator.generate("win", campaign),
+              lurl: BeaconGenerator.generate("loss", campaign),
               adomain: [
                   ""
               ],
@@ -60,12 +63,12 @@ defmodule OtelinhoAdServerWeb.OpenRTB do
         eventtrackers: [
           %{
             method: 1,
-            url: "http://localhost:4000/event/impression/data",
+            url: BeaconGenerator.generate("impression", campaign),
             event: 1
           },
           %{
             method: 1,
-            url: "http://localhost:4000/event/${EVENT_TYPE}/data",
+            url: BeaconGenerator.generate("%{EVENT_TYPE}", campaign),
             event: 600
           }
         ],

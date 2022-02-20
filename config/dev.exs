@@ -1,5 +1,8 @@
 import Config
 
+config :otelinho_ad_server, OtelinhoAdServer.BeaconGenerator,
+  secret: "XRbnDdt3C3EkDdB3abkhEcCmPZM/O8UmQxzeQqGYsTiBpvJrVccfZsTOE64xuxCS"
+
 # Configure your database
 config :otelinho_ad_server, OtelinhoAdServer.Repo,
   username: "otelinho",
